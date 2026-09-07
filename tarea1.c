@@ -235,9 +235,11 @@ int main() {
       presioneTeclaParaContinuar();
     }
 
-  } while (opcion != '6');
+  
 
-  list_clean(pacientes);
 
-  return 0;
+
+ }
+list_clean(pacientes);
+return 0;
 }
