@@ -5,15 +5,12 @@
 #include <string.h>
 #include <time.h>
 
-typedef struct Nodo {
+typedef struct {
     int id;
     char descripcion[200];
     int prioridad;
     char horaRegistro[20];
-
-    struct Nodo *anterior;
-    struct Nodo *siguiente;
-} Nodo;
+} Paciente;
 
 
 void mostrarMenuPrincipal() {
@@ -31,13 +28,33 @@ void mostrarMenuPrincipal() {
 }
 
 
-void registrar_paciente(List *lista, int id, char especificaciones[]) {
-    Nodo *nuevo = malloc(sizeof(Nodo));
+int existe_paciente(List *lista, int id) {
+    Paciente *paciente = firstList(lista);
+
+    while (paciente != NULL) {
+        if (paciente->id == id) {
+            return 1;
+        }
+
+        paciente = nextList(lista);
+    }
+
+    return 0;
+}
+
+
+void registrar_paciente(List *lista, int id, char descripcion[]) {
+    Paciente *nuevo = malloc(sizeof(Paciente));
     time_t tiempo;
     struct tm *hora;
 
+    if (nuevo == NULL) {
+        printf("No se pudo reservar memoria.\n");
+        return;
+    }
+
     nuevo->id = id;
-    strcpy(nuevo->descripcion, especificaciones);
+    strcpy(nuevo->descripcion, descripcion);
     nuevo->prioridad = 3;
 
     tiempo = time(NULL);
@@ -51,12 +68,11 @@ void registrar_paciente(List *lista, int id, char especificaciones[]) {
 
 
 void cambiar_prioridad(List *lista, int id, int nuevaPrioridad) {
-    Nodo *paciente = firstList(lista);
+    Paciente *paciente = firstList(lista);
 
     while (paciente != NULL) {
         if (paciente->id == id) {
             paciente->prioridad = nuevaPrioridad;
-            printf("Prioridad cambiada correctamente.\n");
             return;
         }
 
@@ -68,7 +84,7 @@ void cambiar_prioridad(List *lista, int id, int nuevaPrioridad) {
 
 
 void mostrar_lista_pacientes(List *lista) {
-    Nodo *paciente;
+    Paciente *paciente;
 
     printf("Tickets pendientes:\n");
 
@@ -81,7 +97,7 @@ void mostrar_lista_pacientes(List *lista) {
 
     while (paciente != NULL) {
         printf("\nID: %d", paciente->id);
-        printf("\nEspecificaciones: %s", paciente->descripcion);
+        printf("\nDescripcion: %s", paciente->descripcion);
         printf("\nPrioridad: %d", paciente->prioridad);
         printf("\nHora de registro: %s\n", paciente->horaRegistro);
 
@@ -91,7 +107,7 @@ void mostrar_lista_pacientes(List *lista) {
 
 
 void atender_siguiente(List *lista) {
-    Nodo *paciente = firstList(lista);
+    Paciente *paciente = firstList(lista);
 
     if (paciente == NULL) {
         printf("No hay pacientes pendientes.\n");
@@ -100,7 +116,7 @@ void atender_siguiente(List *lista) {
 
     printf("Paciente atendido:\n");
     printf("ID: %d\n", paciente->id);
-    printf("Especificaciones: %s\n", paciente->descripcion);
+    printf("Descripcion: %s\n", paciente->descripcion);
     printf("Prioridad: %d\n", paciente->prioridad);
     printf("Hora de registro: %s\n", paciente->horaRegistro);
 
@@ -109,17 +125,24 @@ void atender_siguiente(List *lista) {
 
 
 void mostrar_pacientes_por_prioridad(List *lista) {
-    Nodo *paciente;
+    Paciente *paciente;
 
-    printf("Pacientes pendientes:\n");
+    paciente = firstList(lista);
+
+    if (paciente == NULL) {
+        printf("No hay tickets pendientes.\n");
+        return;
+    }
 
     for (int prioridad = 1; prioridad <= 3; prioridad++) {
+
         paciente = firstList(lista);
 
         while (paciente != NULL) {
+
             if (paciente->prioridad == prioridad) {
                 printf("\nID: %d", paciente->id);
-                printf("\nEspecificaciones: %s", paciente->descripcion);
+                printf("\nDescripcion: %s", paciente->descripcion);
                 printf("\nPrioridad: %d", paciente->prioridad);
                 printf("\nHora de registro: %s\n", paciente->horaRegistro);
             }
@@ -136,22 +159,32 @@ int main() {
 
   do {
     mostrarMenuPrincipal();
-    printf("Ingrese su opción: ");
+
+    printf("Ingrese su opcion: ");
     scanf(" %c", &opcion);
 
     switch (opcion) {
 
     case '1': {
       int id;
-      char especificaciones[200];
+      char descripcion[200];
 
       printf("Ingrese ID del paciente: ");
       scanf("%d", &id);
 
-      printf("Ingrese las especificaciones: ");
-      scanf(" %[^\n]", especificaciones);
+      if (existe_paciente(pacientes, id)) {
+          printf("Ya existe un paciente con ese ID.\n");
+          break;
+      }
 
-      registrar_paciente(pacientes, id, especificaciones);
+      getchar();
+
+      printf("Ingrese las especificaciones: ");
+      fgets(descripcion, sizeof(descripcion), stdin);
+
+      descripcion[strcspn(descripcion, "\n")] = '\0';
+
+      registrar_paciente(pacientes, id, descripcion);
 
       break;
     }
@@ -163,8 +196,15 @@ int main() {
       printf("Ingrese el ID del paciente: ");
       scanf("%d", &id);
 
-      printf("Ingrese la nueva prioridad (1-Alta, 2-Media, 3-Baja): ");
-      scanf("%d", &nuevaPrioridad);
+      do {
+          printf("Ingrese la nueva prioridad (1-Alta, 2-Media, 3-Baja): ");
+          scanf("%d", &nuevaPrioridad);
+
+          if (nuevaPrioridad < 1 || nuevaPrioridad > 3) {
+              printf("Prioridad invalida. Debe ser entre 1 y 3.\n");
+          }
+
+      } while (nuevaPrioridad < 1 || nuevaPrioridad > 3);
 
       cambiar_prioridad(pacientes, id, nuevaPrioridad);
 
@@ -191,7 +231,9 @@ int main() {
       puts("Opción no válida. Por favor, intente de nuevo.");
     }
 
-    presioneTeclaParaContinuar();
+    if (opcion != '6') {
+      presioneTeclaParaContinuar();
+    }
 
   } while (opcion != '6');
 
