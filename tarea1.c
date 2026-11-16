@@ -1,3 +1,4 @@
+
 #include "tdas/list.h"
 #include "tdas/extra.h"
 #include <stdio.h>
@@ -14,29 +15,29 @@ typedef struct {
 
 
 void mostrarMenuPrincipal() {
-  limpiarPantalla();
-  puts("========================================");
-  puts("     Sistema de Gestión Hospitalaria");
-  puts("========================================");
+    limpiarPantalla();
+    puts("========================================");
+    puts("     Sistema de Gestión Hospitalaria");
+    puts("========================================");
 
-  puts("1) Registrar paciente");
-  puts("2) Asignar prioridad a paciente");
-  puts("3) Mostrar lista de espera");
-  puts("4) Atender al siguiente paciente");
-  puts("5) Mostrar pacientes por prioridad");
-  puts("6) Salir");
+    puts("1) Registrar paciente");
+    puts("2) Asignar prioridad a paciente");
+    puts("3) Mostrar lista de espera");
+    puts("4) Atender al siguiente paciente");
+    puts("5) Mostrar pacientes por prioridad");
+    puts("6) Salir");
 }
 
 
 int existe_paciente(List *lista, int id) {
-    Paciente *paciente = firstList(lista);
+    Paciente *paciente = list_first(lista);
 
     while (paciente != NULL) {
         if (paciente->id == id) {
             return 1;
         }
 
-        paciente = nextList(lista);
+        paciente = list_next(lista);
     }
 
     return 0;
@@ -63,12 +64,12 @@ void registrar_paciente(List *lista, int id, char descripcion[]) {
     strftime(nuevo->horaRegistro, sizeof(nuevo->horaRegistro),
              "%d/%m/%Y %H:%M:%S", hora);
 
-    pushCurrent(lista, nuevo);
+    list_pushBack(lista, nuevo);
 }
 
 
 void cambiar_prioridad(List *lista, int id, int nuevaPrioridad) {
-    Paciente *paciente = firstList(lista);
+    Paciente *paciente = list_first(lista);
 
     while (paciente != NULL) {
         if (paciente->id == id) {
@@ -76,7 +77,7 @@ void cambiar_prioridad(List *lista, int id, int nuevaPrioridad) {
             return;
         }
 
-        paciente = nextList(lista);
+        paciente = list_next(lista);
     }
 
     printf("No se encontro el paciente.\n");
@@ -84,11 +85,9 @@ void cambiar_prioridad(List *lista, int id, int nuevaPrioridad) {
 
 
 void mostrar_lista_pacientes(List *lista) {
-    Paciente *paciente;
+    Paciente *paciente = list_first(lista);
 
     printf("Tickets pendientes:\n");
-
-    paciente = firstList(lista);
 
     if (paciente == NULL) {
         printf("No hay tickets pendientes.\n");
@@ -101,13 +100,13 @@ void mostrar_lista_pacientes(List *lista) {
         printf("\nPrioridad: %d", paciente->prioridad);
         printf("\nHora de registro: %s\n", paciente->horaRegistro);
 
-        paciente = nextList(lista);
+        paciente = list_next(lista);
     }
 }
 
 
 void atender_siguiente(List *lista) {
-    Paciente *paciente = firstList(lista);
+    Paciente *paciente = list_popFront(lista);
 
     if (paciente == NULL) {
         printf("No hay pacientes pendientes.\n");
@@ -120,14 +119,14 @@ void atender_siguiente(List *lista) {
     printf("Prioridad: %d\n", paciente->prioridad);
     printf("Hora de registro: %s\n", paciente->horaRegistro);
 
-    popCurrent(lista);
+    free(paciente);
 }
 
 
 void mostrar_pacientes_por_prioridad(List *lista) {
     Paciente *paciente;
 
-    paciente = firstList(lista);
+    paciente = list_first(lista);
 
     if (paciente == NULL) {
         printf("No hay tickets pendientes.\n");
@@ -136,7 +135,7 @@ void mostrar_pacientes_por_prioridad(List *lista) {
 
     for (int prioridad = 1; prioridad <= 3; prioridad++) {
 
-        paciente = firstList(lista);
+        paciente = list_first(lista);
 
         while (paciente != NULL) {
 
@@ -147,99 +146,110 @@ void mostrar_pacientes_por_prioridad(List *lista) {
                 printf("\nHora de registro: %s\n", paciente->horaRegistro);
             }
 
-            paciente = nextList(lista);
+            paciente = list_next(lista);
         }
     }
 }
 
 
 int main() {
-  char opcion;
-  List *pacientes = list_create();
+    char opcion;
+    List *pacientes = list_create();
 
-  do {
-    mostrarMenuPrincipal();
-
-    printf("Ingrese su opcion: ");
-    scanf(" %c", &opcion);
-
-    switch (opcion) {
-
-    case '1': {
-      int id;
-      char descripcion[200];
-
-      printf("Ingrese ID del paciente: ");
-      scanf("%d", &id);
-
-      if (existe_paciente(pacientes, id)) {
-          printf("Ya existe un paciente con ese ID.\n");
-          break;
-      }
-
-      getchar();
-
-      printf("Ingrese las especificaciones: ");
-      fgets(descripcion, sizeof(descripcion), stdin);
-
-      descripcion[strcspn(descripcion, "\n")] = '\0';
-
-      registrar_paciente(pacientes, id, descripcion);
-
-      break;
+    if (pacientes == NULL) {
+        printf("No se pudo crear la lista.\n");
+        return 1;
     }
 
-    case '2': {
-      int id;
-      int nuevaPrioridad;
+    do {
+        mostrarMenuPrincipal();
 
-      printf("Ingrese el ID del paciente: ");
-      scanf("%d", &id);
+        printf("Ingrese su opcion: ");
+        scanf(" %c", &opcion);
 
-      do {
-          printf("Ingrese la nueva prioridad (1-Alta, 2-Media, 3-Baja): ");
-          scanf("%d", &nuevaPrioridad);
+        switch (opcion) {
 
-          if (nuevaPrioridad < 1 || nuevaPrioridad > 3) {
-              printf("Prioridad invalida. Debe ser entre 1 y 3.\n");
-          }
+        case '1': {
+            int id;
+            char descripcion[200];
 
-      } while (nuevaPrioridad < 1 || nuevaPrioridad > 3);
+            printf("Ingrese ID del paciente: ");
+            scanf("%d", &id);
 
-      cambiar_prioridad(pacientes, id, nuevaPrioridad);
+            if (existe_paciente(pacientes, id)) {
+                printf("Ya existe un paciente con ese ID.\n");
+                break;
+            }
 
-      break;
+            getchar();
+
+            printf("Ingrese las especificaciones: ");
+            fgets(descripcion, sizeof(descripcion), stdin);
+
+            descripcion[strcspn(descripcion, "\n")] = '\0';
+
+            registrar_paciente(pacientes, id, descripcion);
+
+            break;
+        }
+
+        case '2': {
+            int id;
+            int nuevaPrioridad;
+
+            printf("Ingrese el ID del paciente: ");
+            scanf("%d", &id);
+
+            do {
+                printf("Ingrese la nueva prioridad (1-Alta, 2-Media, 3-Baja): ");
+                scanf("%d", &nuevaPrioridad);
+
+                if (nuevaPrioridad < 1 || nuevaPrioridad > 3) {
+                    printf("Prioridad invalida. Debe ser entre 1 y 3.\n");
+                }
+
+            } while (nuevaPrioridad < 1 || nuevaPrioridad > 3);
+
+            cambiar_prioridad(pacientes, id, nuevaPrioridad);
+
+            break;
+        }
+
+        case '3':
+            mostrar_lista_pacientes(pacientes);
+            break;
+
+        case '4':
+            atender_siguiente(pacientes);
+            break;
+
+        case '5':
+            mostrar_pacientes_por_prioridad(pacientes);
+            break;
+
+        case '6':
+            puts("Saliendo del sistema de gestión hospitalaria...");
+            break;
+
+        default:
+            puts("Opción no válida. Por favor, intente de nuevo.");
+        }
+
+        if (opcion != '6') {
+            presioneTeclaParaContinuar();
+        }
+
+    } while (opcion != '6');
+
+    Paciente *paciente = list_first(pacientes);
+
+    while (paciente != NULL) {
+        free(paciente);
+        paciente = list_next(pacientes);
     }
 
-    case '3':
-      mostrar_lista_pacientes(pacientes);
-      break;
+    list_clean(pacientes);
+    free(pacientes);
 
-    case '4':
-      atender_siguiente(pacientes);
-      break;
-
-    case '5':
-      mostrar_pacientes_por_prioridad(pacientes);
-      break;
-
-    case '6':
-      puts("Saliendo del sistema de gestión hospitalaria...");
-      break;
-
-    default:
-      puts("Opción no válida. Por favor, intente de nuevo.");
-    }
-
-    if (opcion != '6') {
-      presioneTeclaParaContinuar();
-    }
-
-  
-
-
-
- }
-list_clean(pacientes);
-return 0;
+    return 0;
 }

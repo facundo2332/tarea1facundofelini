@@ -1,2 +1,7 @@
 compile = "gcc tdas/*.c tarea3.c -Wno-unused-result -o tarea3"
 run = "./tarea3"
+
+[deployment]
+deploymentTarget = "cloudrun"
+run = "./tarea3"
+build = "gcc tdas/*.c tarea3.c -Wno-unused-result -o tarea3"
